@@ -1,0 +1,111 @@
+#############################################################################
+# config for loading ship-ice simulation #
+#############################################################################
+### GLOBAL PARAMS
+# output_dir: "outputs/icenet/40"
+
+plot:
+  y_axis_limit: 1500  # limits the y-axis of the plot
+  show: false       # true will show planner plots
+
+### PLANNER PARAMS
+# max_replan: 1        
+planner: 'icenet'     # options are 'skeleton', 'straight', 'lattice', 'predictive', 'icenet'
+model_path: "models/IceNetV2.ckpt"  # path to the trained model
+model_win_h: 80       # height of the model input window 
+model_win_w: 80       # width of the model input window
+cost_scale: 1000000   # scale for the collision cost prediction
+cost_log: True        # set to true if the model predicts log of cost
+max_thickness: 1      # max thickness for model normalization (same as training)
+max_velocity: 30      # max velocity for model normalization (same as training)
+
+collection: False     # data collection mode
+plan_steps: 50        # steps between obstacle and planner updates
+goal_y: 1200
+threshold_dist: 0.5   # fraction of path length for deciding whether to update planned path
+threshold_cost: 0.95  # fraction of path cost for deciding whether to update planned path
+occ:
+  grid_size: 2         # occupancy map grid size
+  map_height: 1500     # occupancy map height (in meter)
+  map_width: 500        # occupancy map width (in meter)
+  pixels_per_grid: 4   # number of pixels per grid
+a_star:
+  horizon: 1500  # receding horizon in metres (needs to be an int for it to be enabled)
+  replan: True
+  # smooth_path:
+  #   add_nodes: 10  # number of nodes to add in node path
+  #   max_dist: 20   # max distance to consider a pair of nodes
+  weight: 1        # static weighting for weighed A* f(n) = g(n) + w * h(n) where weight > 1
+  replan_dist: 250  
+#  h_baseline: True  # if true, then heuristic is simply euclidean distance to goal
+  margin: 100
+costmap:
+  m: 4000       # height of ice channel in metres, can set to large number for 'infinite' ice channel
+  n: 500       # width of ice channel in metres
+  scale: .5    # this gives a resolution of 1/scale x 1/scale metres
+  alpha: 0.01    # costmap collision cost multiplier
+prim:
+  scale: 15 # Note, there is a limit on how small prim scale can be in relation to costmap scale
+  num_headings: 8  # number of headings in the discretized heading space
+  step_size: 0.5   # step size for sampling points on the path
+  turning_radius: 2.0  # turning radius of the ship in lattice units
+ship:
+  mass: 6000000 
+  padding: 0  # adds padding to ship footprint
+  vertices: [
+             [59.4, 0.0],   # vertices of the ship footprint in metres defined around (0, 0) and the ship's bow facing the positive x-axis
+             [49.5, 6.1],
+             [35.9, 10.5],
+             [0, 10.8],
+             [-42.1, 10.8],
+             [-56.2, 7.1],
+             [-61.5, 0],
+             [-56.2, -7.1],
+             [-42.1, -10.8],
+             [0, -10.8],
+             [35.9, -10.5],
+             [49.5, -6.1],
+            ]
+
+### SIMULATION PARAMS
+sim:
+  t_max: 10000  # max number of iterations in simulation loop
+  steps: 4    # number of simulation steps per iteration
+  gravity: !!python/tuple
+    - 0
+    - 0
+  iterations: 10  # controls accuracy of pymunk solver i.e. simulation accuracy, default is 10
+  damping: 0      # damping to body velocities
+  obstacle_density: 900
+anim:
+  init_save: false          # if true save initial path plot
+  save: false               # if true save to disk animation plots
+  show: false                # if true show animation plots
+  format: 'pdf'
+  title: false
+  plot_steps: 500            # steps between plot updates
+  inf_stream: false         # if true then infinite obstacle stream mode is enabled
+  move_yaxis_threshold: 10  # distance traveled before y-axis moves
+#  new_obs_dist: 50          # distance traveled before new obstacles are added
+seed: 1
+
+### SHIP MODEL AND CONTROLLER PARAMS
+controller:
+  dt: 0.12  # the ship dynamics model was discretized with this dt
+  # States: [r, u, v] : yaw rate (deg/s), surge velocity (m/s), sway velocity (m/s)
+  A:
+    - [ 0.9909, 0., 0. ]
+    - [ 0., 0.9980, 0. ]
+    - [ 0., 0., 0.9953 ]
+  # Input matrix: differential fore/aft (rps), side tunnel (rps), main prop (rps) (Assume pure motions)
+  B: [ 0.04515, 4.321e-5, 1.730e-4 ]
+  # Input limits
+  input_lims: [1.40, 3.1, 0.31]
+  # look ahead distance
+  Lfc: 19
+  # target speed
+  target_speed: 1.85  # m/s
+  PID_gains:  # gains for 3 PIDs
+    - [ 0.81, 0, 5  ]
+    - [ 1.62, 0, 20 ]
+    - [ 1.62, 0, 20 ]
